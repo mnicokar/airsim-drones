@@ -928,6 +928,29 @@ class DroneService:
         assignments = []
         futures = []
 
+        # First, initialize and takeoff all drones
+        for drone_id in formation_drones:
+            # Initialize drone if not already done
+            if drone_id not in self._drone_states:
+                self.initialize_drone(drone_id)
+
+            # Takeoff if landed
+            current_state = self._drone_states.get(drone_id, DroneState.LANDED)
+            if current_state == DroneState.LANDED:
+                self._drone_states[drone_id] = DroneState.TAKING_OFF
+                self._drone_tasks[drone_id] = "Taking off for formation"
+                self.client.takeoffAsync(vehicle_name=drone_id)
+
+        # Wait for all takeoffs to complete
+        time.sleep(4)
+
+        # Move all to formation altitude
+        for drone_id in formation_drones:
+            self.client.moveToZAsync(self.DEFAULT_ALTITUDE, self.DEFAULT_SPEED, vehicle_name=drone_id)
+
+        time.sleep(3)
+
+        # Now set up formation assignments and rotate to face house
         for i, drone_id in enumerate(formation_drones):
             offset_x, offset_y = offsets[i]
 
@@ -950,11 +973,6 @@ class DroneService:
                 "target": {"x": round(final_x, 1), "y": round(final_y, 1)},
                 "offset": {"x": offset_x, "y": offset_y}
             })
-
-            # Auto-takeoff if landed
-            current_state = self._drone_states.get(drone_id, DroneState.LANDED)
-            if current_state == DroneState.LANDED:
-                self.takeoff(drone_id, wait=True)
 
             # Rotate to face the house
             self.client.rotateToYawAsync(heading, timeout_sec=5, vehicle_name=drone_id)
