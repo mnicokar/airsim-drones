@@ -18,6 +18,8 @@ from .drone import (
     AltitudeRequest,
     HouseInfo,
     HousesResponse,
+    GroupFlightRequest,
+    GroupFlightResponse,
 )
 
 from .mission import (
@@ -60,6 +62,8 @@ __all__ = [
     "AltitudeRequest",
     "HouseInfo",
     "HousesResponse",
+    "GroupFlightRequest",
+    "GroupFlightResponse",
     # Fleet/Mission models
     "FormationRequest",
     "FormationResponse",

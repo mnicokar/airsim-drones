@@ -804,6 +804,198 @@ class DroneService:
         return drone_ids
 
     # =========================================================================
+    # Formation Flying
+    # =========================================================================
+
+    def get_formation_offsets(self, formation: str, num_drones: int, spacing: float = 8.0) -> List[Tuple[float, float]]:
+        """
+        Get position offsets for a formation.
+
+        Args:
+            formation: Formation type ("v", "line", "diamond", "echelon")
+            num_drones: Number of drones in formation (including leader)
+            spacing: Distance between drones in meters
+
+        Returns:
+            List of (x_offset, y_offset) tuples for each drone position
+        """
+        offsets = [(0.0, 0.0)]  # Leader at origin
+
+        if formation == "v":
+            # V-formation: leader at front, others trail back in V shape
+            for i in range(1, num_drones):
+                side = 1 if i % 2 == 1 else -1  # Alternate left/right
+                row = (i + 1) // 2  # Row number (1, 1, 2, 2, 3, 3...)
+                x_offset = -row * spacing  # Behind leader
+                y_offset = side * row * spacing  # Left or right
+                offsets.append((x_offset, y_offset))
+
+        elif formation == "line":
+            # Line formation: side by side
+            for i in range(1, num_drones):
+                side = 1 if i % 2 == 1 else -1
+                pos = (i + 1) // 2
+                offsets.append((0.0, side * pos * spacing))
+
+        elif formation == "diamond":
+            # Diamond formation
+            positions = [
+                (0, 0),           # Leader (front)
+                (-spacing, -spacing),   # Back-left
+                (-spacing, spacing),    # Back-right
+                (-spacing * 2, 0),      # Rear
+                (-spacing, 0),          # Middle
+            ]
+            offsets = positions[:num_drones]
+
+        elif formation == "echelon":
+            # Echelon formation: diagonal line
+            for i in range(1, num_drones):
+                offsets.append((-i * spacing, i * spacing))
+
+        elif formation == "column":
+            # Column formation: single file behind leader
+            for i in range(1, num_drones):
+                offsets.append((-i * spacing, 0.0))
+
+        else:
+            # Default to V if unknown
+            return self.get_formation_offsets("v", num_drones, spacing)
+
+        return offsets
+
+    def group_flight(
+        self,
+        leader_id: str,
+        house_identifier: str,
+        formation: str = "v",
+        spacing: float = 8.0,
+        speed: float = 5.0,
+        wait: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Fly all drones in formation to a house with a designated leader.
+
+        Args:
+            leader_id: ID of the leader drone
+            house_identifier: House letter (A-T) to fly to
+            formation: Formation type ("v", "line", "diamond", "echelon", "column")
+            spacing: Distance between drones in meters
+            speed: Flight speed in m/s
+            wait: If True, wait for all drones to reach destination
+
+        Returns:
+            Dict with formation info and drone assignments
+        """
+        # Find the destination house
+        house_name, house = self.find_house(house_identifier)
+        if house is None:
+            return {"error": f"House '{house_identifier}' not found"}
+
+        target_x, target_y = house['x'], house['y']
+
+        # Get all available drones
+        all_drones = self.get_available_drones()
+        if leader_id not in all_drones:
+            return {"error": f"Leader drone '{leader_id}' not available"}
+
+        # Order drones with leader first
+        follower_drones = [d for d in all_drones if d != leader_id]
+        formation_drones = [leader_id] + follower_drones
+        num_drones = len(formation_drones)
+
+        # Get formation offsets
+        offsets = self.get_formation_offsets(formation, num_drones, spacing)
+
+        # Calculate heading from formation center to house
+        # Use leader's current position to determine approach angle
+        leader_pos = self.get_drone_position(leader_id)
+        dx = target_x - leader_pos[0]
+        dy = target_y - leader_pos[1]
+        heading = math.degrees(math.atan2(dy, dx))
+        heading_rad = math.radians(heading)
+
+        # Viewing position: offset from house towards the drones
+        view_distance = 15 + (num_drones * spacing / 2)  # More drones = further back
+        approach_x = target_x - view_distance * math.cos(heading_rad)
+        approach_y = target_y - view_distance * math.sin(heading_rad)
+
+        # Transform formation offsets based on heading
+        # Rotate offsets so formation faces the house
+        cos_h = math.cos(heading_rad)
+        sin_h = math.sin(heading_rad)
+
+        assignments = []
+        futures = []
+
+        for i, drone_id in enumerate(formation_drones):
+            offset_x, offset_y = offsets[i]
+
+            # Rotate offset by heading
+            rotated_x = offset_x * cos_h - offset_y * sin_h
+            rotated_y = offset_x * sin_h + offset_y * cos_h
+
+            # Final position
+            final_x = approach_x + rotated_x
+            final_y = approach_y + rotated_y
+
+            # Update state
+            role = "leader" if i == 0 else "follower"
+            self._drone_states[drone_id] = DroneState.FLYING
+            self._drone_tasks[drone_id] = f"Formation flight to {house_name} ({role})"
+
+            assignments.append({
+                "drone_id": drone_id,
+                "role": role,
+                "target": {"x": round(final_x, 1), "y": round(final_y, 1)},
+                "offset": {"x": offset_x, "y": offset_y}
+            })
+
+            # Auto-takeoff if landed
+            current_state = self._drone_states.get(drone_id, DroneState.LANDED)
+            if current_state == DroneState.LANDED:
+                self.takeoff(drone_id, wait=True)
+
+            # Rotate to face the house
+            self.client.rotateToYawAsync(heading, timeout_sec=5, vehicle_name=drone_id)
+
+        # Small delay for rotations
+        time.sleep(1)
+
+        # Tilt cameras down and start movement
+        for i, drone_id in enumerate(formation_drones):
+            self._set_camera_pitch(drone_id, self.CAMERA_PITCH)
+
+            offset_x, offset_y = offsets[i]
+            rotated_x = offset_x * cos_h - offset_y * sin_h
+            rotated_y = offset_x * sin_h + offset_y * cos_h
+            final_x = approach_x + rotated_x
+            final_y = approach_y + rotated_y
+
+            future = self.client.moveToPositionAsync(
+                final_x, final_y, self.DEFAULT_ALTITUDE, speed,
+                vehicle_name=drone_id
+            )
+            futures.append((drone_id, future))
+
+        if wait:
+            for drone_id, future in futures:
+                future.join()
+                self.client.hoverAsync(vehicle_name=drone_id).join()
+                self._drone_states[drone_id] = DroneState.HOVERING
+                self._drone_tasks[drone_id] = f"Viewing {house_name}"
+
+        return {
+            "status": "formation_flight_started",
+            "formation": formation,
+            "leader": leader_id,
+            "destination": house_name,
+            "house_position": {"x": target_x, "y": target_y},
+            "approach_heading": round(heading, 1),
+            "drones": assignments
+        }
+
+    # =========================================================================
     # Scene Object Discovery
     # =========================================================================
 

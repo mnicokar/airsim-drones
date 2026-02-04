@@ -54,6 +54,7 @@ python run_api.py
 | `/fleet/takeoff` | POST | Take off all drones |
 | `/fleet/land` | POST | Land all drones |
 | `/fleet/hover` | POST | Hover all drones |
+| `/fleet/group-flight` | POST | **Formation flight** - all drones fly together to a house |
 | `/fleet/emergency-stop` | POST | Emergency stop all |
 | `/fleet/clear-emergency` | POST | Clear emergency status |
 
@@ -125,6 +126,65 @@ POST /fleet/takeoff
 ```
 POST /fleet/emergency-stop
 ```
+
+---
+
+## Formation Group Flight
+
+Fly all drones in formation to a house with one drone as the leader.
+
+### Available Formations
+
+| Formation | Description |
+|-----------|-------------|
+| `v` | V-formation - leader at front, others trail in V shape (default) |
+| `line` | Side-by-side line formation |
+| `diamond` | Diamond pattern |
+| `echelon` | Diagonal line trailing behind leader |
+| `column` | Single file behind leader |
+
+### Group Flight Example
+
+```
+POST /fleet/group-flight
+```
+```json
+{
+  "leader": "drone1",
+  "house": "A",
+  "formation": "v"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "formation_flight_started",
+  "formation": "v",
+  "leader": "Drone1",
+  "destination": "House A",
+  "house_position": {"x": 20.1, "y": -17.2},
+  "approach_heading": 45.0,
+  "drones": [
+    {"drone_id": "Drone1", "role": "leader", "target": {"x": 15.0, "y": -12.0}},
+    {"drone_id": "Drone2", "role": "follower", "target": {"x": 7.0, "y": -20.0}},
+    {"drone_id": "Drone3", "role": "follower", "target": {"x": 7.0, "y": -4.0}},
+    {"drone_id": "Drone4", "role": "follower", "target": {"x": -1.0, "y": -28.0}},
+    {"drone_id": "Drone5", "role": "follower", "target": {"x": -1.0, "y": 4.0}}
+  ]
+}
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `leader` | string | required | Leader drone ID (e.g., "drone1") |
+| `house` | string | required | Destination house (A-T) |
+| `formation` | string | "v" | Formation type |
+| `spacing` | float | 8.0 | Distance between drones (meters) |
+| `speed` | float | 5.0 | Flight speed (m/s) |
+| `wait` | bool | false | Wait for all drones to arrive |
 
 ---
 
@@ -246,6 +306,8 @@ Content-Type: application/json
 | "Emergency stop!" | `POST /fleet/emergency-stop` |
 | "List all houses" | `GET /drones/houses` |
 | "What's the fleet status?" | `GET /status/fleet` |
+| "Fly all drones to House C in V-formation" | `POST /fleet/group-flight {"leader": "drone1", "house": "C", "formation": "v"}` |
+| "Group up with Drone2 and fly to House B" | `POST /fleet/group-flight {"leader": "drone2", "house": "B"}` |
 
 ### Tool Definition Example
 

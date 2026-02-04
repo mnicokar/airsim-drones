@@ -158,3 +158,38 @@ class HousesResponse(BaseModel):
     """Response listing all houses."""
     houses: List[HouseInfo] = Field(..., description="List of all house locations")
     count: int = Field(..., description="Total number of houses")
+
+
+class GroupFlightRequest(BaseModel):
+    """Request for formation group flight."""
+    leader: str = Field(..., description="Leader drone ID (e.g., 'drone1', 'Drone1', 'd1')")
+    house: str = Field(..., description="Destination house (A-T)")
+    formation: str = Field("v", description="Formation type: 'v', 'line', 'diamond', 'echelon', 'column'")
+    spacing: float = Field(8.0, description="Spacing between drones in meters", ge=3, le=20)
+    speed: float = Field(5.0, description="Flight speed in m/s", ge=1, le=15)
+    wait: bool = Field(False, description="Wait for all drones to reach destination")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "leader": "drone1",
+                    "house": "A",
+                    "formation": "v",
+                    "spacing": 8.0,
+                    "speed": 5.0
+                }
+            ]
+        }
+    }
+
+
+class GroupFlightResponse(BaseModel):
+    """Response for group flight operation."""
+    status: str = Field(..., description="Status of the operation")
+    formation: str = Field(..., description="Formation type used")
+    leader: str = Field(..., description="Leader drone ID")
+    destination: str = Field(..., description="Destination house name")
+    house_position: Dict[str, float] = Field(..., description="House coordinates")
+    approach_heading: float = Field(..., description="Approach heading in degrees")
+    drones: List[Dict[str, Any]] = Field(..., description="List of drone assignments with roles and target positions")
