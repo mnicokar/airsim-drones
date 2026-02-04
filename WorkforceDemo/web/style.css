@@ -1,0 +1,388 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Header */
+header {
+    background: #16213e;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #0f3460;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    color: #00d9ff;
+}
+
+.status-bar {
+    display: flex;
+    gap: 2rem;
+    font-size: 0.9rem;
+}
+
+.status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.status.connected {
+    background: #00c853;
+    color: #000;
+}
+
+.status.disconnected {
+    background: #ff5252;
+    color: #fff;
+}
+
+/* Main layout */
+main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Map container */
+.map-container {
+    flex: 1;
+    position: relative;
+    background: #0a0a1a;
+}
+
+#map-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.tooltip {
+    position: absolute;
+    background: rgba(22, 33, 62, 0.95);
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    pointer-events: none;
+    display: none;
+    border: 1px solid #0f3460;
+    z-index: 100;
+}
+
+.tooltip.visible {
+    display: block;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 300px;
+    background: #16213e;
+    border-left: 1px solid #0f3460;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel {
+    padding: 1rem;
+    border-bottom: 1px solid #0f3460;
+}
+
+.panel h2 {
+    font-size: 1rem;
+    color: #00d9ff;
+    margin-bottom: 0.75rem;
+}
+
+/* Fleet list */
+#fleet-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.drone-item {
+    background: #0f3460;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.drone-item:hover {
+    background: #1a4a7a;
+}
+
+.drone-item .drone-id {
+    font-weight: 500;
+}
+
+.drone-item .drone-state {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+}
+
+.drone-state.idle, .drone-state.hovering, .drone-state.landed {
+    background: #4caf50;
+    color: #000;
+}
+
+.drone-state.flying, .drone-state.taking_off, .drone-state.landing {
+    background: #2196f3;
+    color: #fff;
+}
+
+.drone-state.emergency {
+    background: #f44336;
+    color: #fff;
+}
+
+/* House list */
+#house-list {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+}
+
+.house-item {
+    background: #0f3460;
+    padding: 0.35rem;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+}
+
+.house-item:hover {
+    background: #e94560;
+}
+
+/* Legend */
+.legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.legend-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.legend-icon.drone-idle {
+    background: #4caf50;
+}
+
+.legend-icon.drone-flying {
+    background: #2196f3;
+}
+
+.legend-icon.drone-emergency {
+    background: #f44336;
+}
+
+.legend-icon.house-marker {
+    background: #e94560;
+    border-radius: 2px;
+}
+
+/* Drone Camera Section (below fleet list) */
+#drone-camera-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #0f3460;
+}
+
+#drone-camera-section.hidden {
+    display: none;
+}
+
+.camera-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+#camera-drone-label {
+    font-size: 0.85rem;
+    color: #00d9ff;
+    font-weight: 500;
+}
+
+#camera-type {
+    padding: 0.25rem 0.4rem;
+    background: #0f3460;
+    border: 1px solid #1a4a7a;
+    border-radius: 4px;
+    color: #eee;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+#camera-type:hover {
+    border-color: #00d9ff;
+}
+
+#camera-type:focus {
+    outline: none;
+    border-color: #00d9ff;
+}
+
+.camera-feed {
+    background: #0a0a1a;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.camera-feed img {
+    width: 100%;
+    display: block;
+}
+
+/* Selected drone highlight in fleet list */
+.drone-item.selected {
+    background: #1a4a7a;
+    border-left: 3px solid #00d9ff;
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn-primary {
+    background: #2196f3;
+    color: #fff;
+}
+
+.btn-danger {
+    background: #f44336;
+    color: #fff;
+}
+
+.btn-warning {
+    background: #ff9800;
+    color: #000;
+}
+
+/* Detail panel */
+.detail-panel {
+    position: fixed;
+    right: 320px;
+    top: 80px;
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 1rem;
+    width: 250px;
+    z-index: 200;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.detail-panel.hidden {
+    display: none;
+}
+
+.detail-panel h3 {
+    color: #00d9ff;
+    margin-bottom: 1rem;
+    padding-right: 2rem;
+}
+
+.close-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    color: #fff;
+}
+
+.detail-content p {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.detail-content strong {
+    color: #aaa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: 300px;
+        border-left: none;
+        border-top: 1px solid #0f3460;
+    }
+
+    .map-container {
+        height: calc(100vh - 400px);
+    }
+
+    .detail-panel {
+        right: 10px;
+        top: auto;
+        bottom: 320px;
+    }
+}

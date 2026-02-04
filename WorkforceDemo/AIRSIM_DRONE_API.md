@@ -1,4 +1,3 @@
-taskkill /IM AirSimNH.exe /F
 # AirSim Drone API Reference
 
 Complete reference for controlling multirotors via the Python API.

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone Fleet Monitor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Drone Fleet Monitor</h1>
+            <div class="status-bar">
+                <span id="connection-status" class="status disconnected">Disconnected</span>
+                <span id="drone-count">Drones: 0</span>
+                <span id="update-time">Last update: --</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="map-container">
+                <canvas id="map-canvas"></canvas>
+                <div id="map-tooltip" class="tooltip"></div>
+            </div>
+
+            <aside class="sidebar">
+                <section class="panel" id="fleet-panel">
+                    <h2>Fleet Status</h2>
+                    <div id="fleet-list"></div>
+
+                    <div id="drone-camera-section" class="hidden">
+                        <div class="camera-header">
+                            <span id="camera-drone-label">Camera: --</span>
+                            <select id="camera-type">
+                                <option value="scene">RGB</option>
+                                <option value="depth">Depth</option>
+                                <option value="segmentation">Segmentation</option>
+                            </select>
+                        </div>
+                        <div class="camera-feed">
+                            <img id="camera-image" src="" alt="Drone camera">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2>Houses</h2>
+                    <div id="house-list"></div>
+                </section>
+
+                <section class="panel">
+                    <h2>Legend</h2>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <span class="legend-icon drone-idle"></span>
+                            <span>Idle/Hovering</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-icon drone-flying"></span>
+                            <span>Flying</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-icon drone-emergency"></span>
+                            <span>Emergency</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-icon house-marker"></span>
+                            <span>House</span>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </main>
+
+        <div id="drone-detail" class="detail-panel hidden">
+            <button class="close-btn" onclick="closeDetail()">&times;</button>
+            <h3 id="detail-drone-id">Drone Details</h3>
+            <div class="detail-content">
+                <p><strong>Position:</strong> <span id="detail-position">--</span></p>
+                <p><strong>Altitude:</strong> <span id="detail-altitude">--</span></p>
+                <p><strong>Heading:</strong> <span id="detail-heading">--</span></p>
+                <p><strong>State:</strong> <span id="detail-state">--</span></p>
+                <p><strong>Task:</strong> <span id="detail-task">--</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="map.js"></script>
+</body>
+</html>
