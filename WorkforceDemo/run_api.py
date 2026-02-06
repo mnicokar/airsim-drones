@@ -50,6 +50,12 @@ def main():
         action="store_true",
         help="Open an ngrok tunnel for external access"
     )
+    parser.add_argument(
+        "--domain",
+        type=str,
+        default="katamorphic-oren-equilaterally.ngrok-free.dev",
+        help="ngrok static domain for a stable URL"
+    )
 
     args = parser.parse_args()
 
@@ -58,7 +64,10 @@ def main():
     if args.tunnel:
         try:
             from pyngrok import ngrok
-            tunnel = ngrok.connect(args.port, "http")
+            connect_kwargs = {"addr": args.port, "proto": "http"}
+            if args.domain:
+                connect_kwargs["domain"] = args.domain
+            tunnel = ngrok.connect(**connect_kwargs)
             public_url = tunnel.public_url
             atexit.register(ngrok.disconnect, tunnel.public_url)
         except Exception as e:

@@ -39,7 +39,8 @@ def get_services():
 @router.post(
     "/initialize",
     summary="Initialize all drones",
-    description="Discover and initialize all available drones for API control."
+    description="Discover and initialize all available drones for API control.",
+    include_in_schema=False,
 )
 async def initialize_fleet():
     """Initialize all drones in the fleet."""
@@ -59,7 +60,8 @@ async def initialize_fleet():
 @router.post(
     "/takeoff",
     summary="Take off all drones",
-    description="Command all drones to take off."
+    description="Command all drones to take off.",
+    include_in_schema=False,
 )
 async def takeoff_fleet():
     """Take off all drones."""
@@ -99,7 +101,8 @@ async def land_fleet():
 @router.post(
     "/hover",
     summary="Hover all drones",
-    description="Command all drones to stop and hover in place."
+    description="Command all drones to stop and hover in place.",
+    include_in_schema=False,
 )
 async def hover_fleet():
     """Hover all drones."""
@@ -191,7 +194,8 @@ async def emergency_stop():
     "/clear-emergency",
     response_model=EmergencyResponse,
     summary="Clear emergency status",
-    description="Clear emergency status and allow normal operations to resume."
+    description="Clear emergency status and allow normal operations to resume.",
+    include_in_schema=False,
 )
 async def clear_emergency():
     """Clear emergency status."""

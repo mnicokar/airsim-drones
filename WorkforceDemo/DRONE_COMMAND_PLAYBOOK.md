@@ -39,24 +39,29 @@ All commands are **non-blocking by default** — they return immediately while t
 
 ### Drones
 
-| Drone ID | Aliases (case-insensitive) |
-|----------|---------------------------|
-| Drone1 | `drone1`, `DRONE1`, `d1`, `D1` |
-| Drone2 | `drone2`, `DRONE2`, `d2`, `D2` |
-| Drone3 | `drone3`, `DRONE3`, `d3`, `D3` |
-| Drone4 | `drone4`, `DRONE4`, `d4`, `D4` |
-| Drone5 | `drone5`, `DRONE5`, `d5`, `D5` |
+There are 5 drones. The valid drone IDs are:
+
+`Drone1`, `Drone2`, `Drone3`, `Drone4`, `Drone5`
+
+**IMPORTANT — Drone ID formatting rules:**
+- IDs are **one word, no spaces**. `Drone1` is correct. `Drone 1` is **wrong** and will fail.
+- The API is case-insensitive: `drone1`, `DRONE1`, `Drone1` all work. The shorthand `d1`/`D1` also works.
+- When the user says "drone 1", "Drone 1", "the first drone", or "d1", always send `Drone1` (no space).
+- When the user says "all drones" or "every drone", use a fleet command instead of addressing drones individually.
 
 ### Default Values
 
+Every optional parameter has a sensible default. If the user doesn't specify a value, **omit the parameter and the server will use the default**. Never ask the user for optional values — just use the defaults.
+
 | Parameter | Default | Range | Unit |
 |-----------|---------|-------|------|
-| Takeoff altitude | 20 | 5 – 100 | meters |
-| Flight speed | 5.0 | 1 – 20 | m/s |
-| Altitude change speed | — | 1 – 10 | m/s |
-| Formation spacing | 8.0 | 3 – 20 | meters |
-| Formation speed | 5.0 | 1 – 15 | m/s |
-| View distance (goto-house) | 10.0 | 0 – 50 | meters |
+| Takeoff altitude | **20** | 5 – 100 | meters |
+| Flight speed (all movement) | **5.0** | 1 – 20 | m/s |
+| Altitude change speed | **5.0** | 1 – 10 | m/s |
+| View distance (goto-house) | **10.0** | 0 – 50 | meters |
+| Formation type | **v** | v, line, diamond, echelon, column | — |
+| Formation spacing | **8.0** | 3 – 20 | meters |
+| Formation speed | **5.0** | 1 – 15 | m/s |
 
 ### Automatic Behaviors
 
@@ -68,7 +73,7 @@ All commands are **non-blocking by default** — they return immediately while t
 
 ## 3. Action Name Reference
 
-You have one tool with 13 available actions. The `action` field determines which API operation to execute. Use this table to select the correct action and know which parameters to include.
+You have 13 available actions. Use this table to select the correct action and know which parameters to include.
 
 ### Quick Lookup
 
@@ -103,7 +108,7 @@ Check a specific drone's current position, velocity, heading, altitude, state, a
 #### `takeoff_drone`
 Launch a drone and ascend to the specified altitude. Auto-initializes the drone if needed. **Use this before `move_drone_to_position` or `rotate_drone`**. Not needed before `navigate_drone_to_house` (which auto-takes-off).
 - **Required:** `drone_id` (Drone1-Drone5)
-- **Optional:** `altitude` (5-100m, default ~20m)
+- **Optional:** `altitude` — default **20m** (range 5-100m). If the user just says "take off", omit altitude.
 
 #### `land_drone`
 Safely bring a drone down at its current position. Use after completing a task or mission.
@@ -112,17 +117,17 @@ Safely bring a drone down at its current position. Use after completing a task o
 #### `navigate_drone_to_house`
 Navigate a drone to view a specific house. The drone positions itself at a viewing distance facing the house, with the camera angled down. **Auto-takes-off if the drone is landed.** This is the preferred action for sending drones to houses — use this instead of `move_drone_to_position` whenever targeting a house.
 - **Required:** `drone_id` (Drone1-Drone5), `house` (A-T)
-- **Optional:** `speed` (1-20 m/s), `view_distance` (0-50m, default 10m)
+- **Optional:** `speed` — default **5.0 m/s** (range 1-20). `view_distance` — default **10.0m** (range 0-50, 0 = directly above).
 
 #### `move_drone_to_position`
 Move a drone to arbitrary X,Y coordinates. Use this for precise positioning not tied to a house. **The drone must be airborne first** — call `takeoff_drone` or `navigate_drone_to_house` first.
 - **Required:** `drone_id` (Drone1-Drone5), `x`, `y`
-- **Optional:** `altitude` (maintains current if omitted), `speed` (1-20 m/s)
+- **Optional:** `altitude` — keeps current altitude if omitted. `speed` — default **5.0 m/s** (range 1-20).
 
 #### `change_drone_altitude`
 Change a drone's altitude while staying at its current X,Y position. Use for altitude surveys or adjusting inspection height.
 - **Required:** `drone_id` (Drone1-Drone5), `altitude` (1-100m)
-- **Optional:** `speed` (1-10 m/s)
+- **Optional:** `speed` — default **5.0 m/s** (range 1-10).
 
 #### `rotate_drone`
 Rotate a drone to face a specific compass heading while hovering in place. Use this to aim the camera in a particular direction — for example, taking photos of a house from multiple angles.
@@ -163,43 +168,35 @@ Immediately stop all drones and command them to hover in place. **Use in any uns
 
 ## 4. Endpoint Reference
 
-### Discovery & Status
+These are the endpoints available to you. Replace `{drone_id}` with a valid drone ID like `Drone1` (no spaces).
+
+### Read Endpoints (GET)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/drones` | List all available drone IDs |
+| GET | `/drones/houses` | List all 20 houses with coordinates |
+| GET | `/drones/{drone_id}` | Get drone status (position, heading, state, task) |
+
+### Individual Drone Commands (POST)
 
 | Method | Endpoint | Body | Description |
 |--------|----------|------|-------------|
-| GET | `/drones` | — | List all available drone IDs |
-| GET | `/drones/houses` | — | List all 20 houses with coordinates |
-| GET | `/drones/{drone_id}` | — | Get detailed drone status (position, velocity, heading, state, task) |
-| GET | `/status/fleet` | — | Get status of all drones + emergency flag |
-| GET | `/status/positions` | — | Get simplified positions of all drones |
-| GET | `/status/health` | — | API health check + AirSim connection status |
-| WS | `/status/ws` | — | WebSocket: live 1 Hz fleet status updates |
-
-### Individual Drone Commands
-
-| Method | Endpoint | Body | Description |
-|--------|----------|------|-------------|
-| POST | `/drones/{drone_id}/takeoff` | `{"altitude": 20, "wait": false}` | Take off to altitude (all fields optional) |
-| POST | `/drones/{drone_id}/land` | — (query: `?wait=false`) | Land at current position |
-| POST | `/drones/{drone_id}/hover` | — | Stop and hover in place |
+| POST | `/drones/{drone_id}/takeoff` | `{"altitude": 20}` | Take off (altitude optional, default 20m) |
+| POST | `/drones/{drone_id}/land` | — | Land at current position |
 | POST | `/drones/{drone_id}/goto-house` | `{"house": "A"}` | Navigate to house (auto-takeoff) |
 | POST | `/drones/{drone_id}/move` | `{"x": 20, "y": -15}` | Move to X,Y coordinates |
 | POST | `/drones/{drone_id}/altitude` | `{"altitude": 30}` | Change altitude only |
 | POST | `/drones/{drone_id}/rotate` | `{"heading": 180}` | Rotate to compass heading |
-| POST | `/drones/{drone_id}/photo` | `{}` or `{"image_types": ["scene"]}` | Capture photo(s) |
-| GET | `/drones/{drone_id}/camera/frame` | — (query: `?type=scene`) | Get live JPEG camera frame |
+| POST | `/drones/{drone_id}/photo` | `{}` | Capture photo from camera |
 
-### Fleet Commands
+### Fleet Commands (POST)
 
 | Method | Endpoint | Body | Description |
 |--------|----------|------|-------------|
-| POST | `/fleet/initialize` | — | Initialize all drones |
-| POST | `/fleet/takeoff` | — | Take off all drones |
+| POST | `/fleet/group-flight` | `{"leader": "Drone1", "house": "A", "formation": "v"}` | Formation flight to house |
 | POST | `/fleet/land` | — | Land all drones |
-| POST | `/fleet/hover` | — | Hover all drones |
-| POST | `/fleet/group-flight` | `{"leader": "drone1", "house": "A", "formation": "v"}` | Formation flight to house |
 | POST | `/fleet/emergency-stop` | — | Emergency stop all drones immediately |
-| POST | `/fleet/clear-emergency` | — | Clear emergency status, resume normal ops |
 
 ---
 
@@ -606,29 +603,3 @@ Check the `"detail"` field in error responses for a human-readable message.
 
 ---
 
-## 7. Houses Reference
-
-All 20 house locations in the Neighborhood map. Coordinates are in meters from the world origin.
-
-| House | X | Y |
-|-------|-------|-------|
-| A | 20.1 | -17.2 |
-| B | -20.6 | -19.5 |
-| C | 20.9 | 25.4 |
-| D | -24.4 | 29.5 |
-| E | -34.7 | 20.9 |
-| F | 33.4 | 23.5 |
-| G | 20.9 | -36.9 |
-| H | -20.9 | -39.1 |
-| I | -22.6 | -49.0 |
-| J | -35.3 | 41.9 |
-| K | 20.9 | -54.4 |
-| L | 25.1 | 53.2 |
-| M | -61.3 | -19.0 |
-| N | -27.0 | 60.0 |
-| O | 60.5 | -33.4 |
-| P | -37.2 | 58.4 |
-| Q | -22.7 | -66.2 |
-| R | -68.6 | -29.0 |
-| S | 29.7 | 69.0 |
-| T | -75.6 | -14.5 |

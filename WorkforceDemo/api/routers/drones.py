@@ -175,7 +175,8 @@ async def land_drone(
 @router.post(
     "/{drone_id}/hover",
     summary="Hover in place",
-    description="Command the drone to stop and hover at its current position. Auto-initializes the drone if needed."
+    description="Command the drone to stop and hover at its current position. Auto-initializes the drone if needed.",
+    include_in_schema=False,
 )
 async def hover_drone(
     drone_id: str = Path(..., description="Drone ID (e.g., 'Drone1' or 'drone1')")
@@ -341,6 +342,7 @@ async def capture_photo(
     "/{drone_id}/camera/frame",
     summary="Get live camera frame",
     description="Get a single camera frame as JPEG image. Use for live camera feed updates.",
+    include_in_schema=False,
     responses={
         200: {
             "content": {"image/jpeg": {}},
