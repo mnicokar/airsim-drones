@@ -63,6 +63,7 @@ python run_api.py
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/status/fleet` | GET | Get all drone statuses |
+| `/status/positions` | GET | Get all drone positions (simplified) |
 | `/status/health` | GET | API health check |
 | `/status/ws` | WebSocket | Live status updates |
 

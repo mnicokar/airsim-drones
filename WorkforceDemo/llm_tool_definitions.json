@@ -1,0 +1,284 @@
+[
+  {
+    "name": "list_drones",
+    "description": "List all available drone IDs in the simulation. Use this to discover which drones are available before sending commands.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/drones",
+    "method": "GET"
+  },
+  {
+    "name": "list_houses",
+    "description": "List all 20 house locations (A through T) with their X,Y coordinates. Use this to find valid navigation targets and their positions.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/drones/houses",
+    "method": "GET"
+  },
+  {
+    "name": "get_drone_status",
+    "description": "Get detailed status of a specific drone including its position, velocity, heading, altitude, state, and current task. Use this to check where a drone is and what it is doing before issuing new commands.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drone_id": {
+          "type": "string",
+          "description": "The drone to query. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        }
+      },
+      "required": ["drone_id"]
+    },
+    "endpoint": "/drones/{drone_id}",
+    "method": "GET"
+  },
+  {
+    "name": "takeoff_drone",
+    "description": "Command a drone to take off and ascend to the specified altitude. The drone auto-initializes if needed. Use this before move or rotate commands. Not needed before goto-house (which auto-takes-off).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drone_id": {
+          "type": "string",
+          "description": "The drone to take off. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        },
+        "altitude": {
+          "type": "number",
+          "description": "Target altitude in meters above ground. If omitted, uses the service default (~20m).",
+          "minimum": 5,
+          "maximum": 100
+        }
+      },
+      "required": ["drone_id"]
+    },
+    "endpoint": "/drones/{drone_id}/takeoff",
+    "method": "POST"
+  },
+  {
+    "name": "land_drone",
+    "description": "Command a drone to land at its current position. Use this to safely bring a drone down after completing its task.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drone_id": {
+          "type": "string",
+          "description": "The drone to land. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        }
+      },
+      "required": ["drone_id"]
+    },
+    "endpoint": "/drones/{drone_id}/land",
+    "method": "POST"
+  },
+  {
+    "name": "navigate_drone_to_house",
+    "description": "Navigate a drone to a specific house (A-T). The drone positions itself at a viewing distance facing the house. Auto-takes-off if the drone is landed. This is the preferred command for sending drones to houses — use it instead of move_drone_to_position when targeting a house.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drone_id": {
+          "type": "string",
+          "description": "The drone to navigate. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        },
+        "house": {
+          "type": "string",
+          "description": "Target house letter.",
+          "enum": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T"]
+        },
+        "speed": {
+          "type": "number",
+          "description": "Flight speed in meters per second.",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "view_distance": {
+          "type": "number",
+          "description": "Distance from the house to hover at in meters. 0 = directly above.",
+          "default": 10.0,
+          "minimum": 0,
+          "maximum": 50
+        }
+      },
+      "required": ["drone_id", "house"]
+    },
+    "endpoint": "/drones/{drone_id}/goto-house",
+    "method": "POST"
+  },
+  {
+    "name": "move_drone_to_position",
+    "description": "Move a drone to an arbitrary X,Y coordinate. Use this for precise positioning that is not tied to a house. The drone must be airborne first (use takeoff_drone or navigate_drone_to_house first).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drone_id": {
+          "type": "string",
+          "description": "The drone to move. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        },
+        "x": {
+          "type": "number",
+          "description": "Target X coordinate in meters (positive = North)."
+        },
+        "y": {
+          "type": "number",
+          "description": "Target Y coordinate in meters (positive = East)."
+        },
+        "altitude": {
+          "type": "number",
+          "description": "Target altitude in meters above ground. If omitted, maintains current altitude."
+        },
+        "speed": {
+          "type": "number",
+          "description": "Movement speed in meters per second.",
+          "minimum": 1,
+          "maximum": 20
+        }
+      },
+      "required": ["drone_id", "x", "y"]
+    },
+    "endpoint": "/drones/{drone_id}/move",
+    "method": "POST"
+  },
+  {
+    "name": "change_drone_altitude",
+    "description": "Change a drone's altitude while maintaining its current X,Y position. Use this for altitude surveys or adjusting inspection height.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drone_id": {
+          "type": "string",
+          "description": "The drone to adjust. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        },
+        "altitude": {
+          "type": "number",
+          "description": "Target altitude in meters above ground.",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "speed": {
+          "type": "number",
+          "description": "Vertical speed in meters per second.",
+          "minimum": 1,
+          "maximum": 10
+        }
+      },
+      "required": ["drone_id", "altitude"]
+    },
+    "endpoint": "/drones/{drone_id}/altitude",
+    "method": "POST"
+  },
+  {
+    "name": "rotate_drone",
+    "description": "Rotate a drone to face a specific compass heading while hovering in place. Use this to aim the camera in a particular direction, e.g., for multi-angle house inspections.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drone_id": {
+          "type": "string",
+          "description": "The drone to rotate. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        },
+        "heading": {
+          "type": "number",
+          "description": "Target heading in degrees. 0 = North, 90 = East, 180 = South, 270 = West.",
+          "minimum": 0,
+          "maximum": 360
+        }
+      },
+      "required": ["drone_id", "heading"]
+    },
+    "endpoint": "/drones/{drone_id}/rotate",
+    "method": "POST"
+  },
+  {
+    "name": "capture_drone_photo",
+    "description": "Capture photos from a drone's camera. Returns file paths to the saved images. Use this after positioning and aiming the drone at a target.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drone_id": {
+          "type": "string",
+          "description": "The drone whose camera to use. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        }
+      },
+      "required": ["drone_id"]
+    },
+    "endpoint": "/drones/{drone_id}/photo",
+    "method": "POST"
+  },
+  {
+    "name": "fleet_formation_flight",
+    "description": "Fly all 5 drones in formation to a house with one drone designated as the leader. Available formations: v (V-shape), line (side-by-side), diamond, echelon (diagonal), column (single file). All drones auto-initialize and auto-takeoff. Use this when you want coordinated fleet movement.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "leader": {
+          "type": "string",
+          "description": "The drone that leads the formation. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        },
+        "house": {
+          "type": "string",
+          "description": "Destination house letter.",
+          "enum": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T"]
+        },
+        "formation": {
+          "type": "string",
+          "description": "Formation pattern for the flight.",
+          "enum": ["v", "line", "diamond", "echelon", "column"],
+          "default": "v"
+        },
+        "spacing": {
+          "type": "number",
+          "description": "Distance between drones in meters.",
+          "default": 8.0,
+          "minimum": 3,
+          "maximum": 20
+        },
+        "speed": {
+          "type": "number",
+          "description": "Flight speed in meters per second.",
+          "default": 5.0,
+          "minimum": 1,
+          "maximum": 15
+        }
+      },
+      "required": ["leader", "house"]
+    },
+    "endpoint": "/fleet/group-flight",
+    "method": "POST"
+  },
+  {
+    "name": "fleet_land_all",
+    "description": "Command all drones in the fleet to land at their current positions. Use this to safely end a mission or bring all drones down.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/fleet/land",
+    "method": "POST"
+  },
+  {
+    "name": "emergency_stop",
+    "description": "Immediately stop all drones and command them to hover in place. Use this in any unsafe situation or when you need to halt all movement instantly. After calling this, use /fleet/clear-emergency before resuming normal operations.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/fleet/emergency-stop",
+    "method": "POST"
+  }
+]

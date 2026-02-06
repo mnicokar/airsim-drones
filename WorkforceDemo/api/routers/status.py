@@ -117,21 +117,6 @@ async def get_all_positions():
     }
 
 
-@router.get(
-    "/collision-risks",
-    summary="Check collision risks",
-    description="Check for potential collision risks between drones."
-)
-async def check_collision_risks():
-    """Check for collision risks."""
-    _, safety_service = get_services()
-    risks = safety_service.check_collision_risks()
-    return {
-        "risks": risks,
-        "count": len(risks),
-        "has_critical": any(r["severity"] == "critical" for r in risks)
-    }
-
 
 # =========================================================================
 # WebSocket Endpoint
@@ -182,11 +167,3 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 
-@router.get(
-    "/ws-clients",
-    summary="Get WebSocket client count",
-    description="Get the number of connected WebSocket clients."
-)
-async def get_ws_clients():
-    """Get number of connected WebSocket clients."""
-    return {"connected_clients": len(manager.active_connections)}
