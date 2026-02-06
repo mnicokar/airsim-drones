@@ -83,6 +83,8 @@ def ensure_drone_ready(service, drone_id: str) -> str:
 async def list_drones():
     """Get list of available drone IDs."""
     service = get_service()
+    if not service.is_connected:
+        service.connect()
     return service.discover_drones()
 
 

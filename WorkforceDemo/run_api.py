@@ -14,6 +14,7 @@ Or use uvicorn directly:
 import argparse
 import uvicorn
 import sys
+import atexit
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -44,8 +45,26 @@ def main():
         default=1,
         help="Number of worker processes (default: 1)"
     )
+    parser.add_argument(
+        "--tunnel",
+        action="store_true",
+        help="Open an ngrok tunnel for external access"
+    )
 
     args = parser.parse_args()
+
+    # Start ngrok tunnel if requested
+    public_url = None
+    if args.tunnel:
+        try:
+            from pyngrok import ngrok
+            tunnel = ngrok.connect(args.port, "http")
+            public_url = tunnel.public_url
+            atexit.register(ngrok.disconnect, tunnel.public_url)
+        except Exception as e:
+            print(f"\n  WARNING: Could not start ngrok tunnel: {e}")
+            print("  Install pyngrok (pip install pyngrok) and sign up at https://ngrok.com")
+            print("  Then run: ngrok config add-authtoken <your-token>\n")
 
     print("\n" + "=" * 60)
     print("  Starting Drone Fleet API Server")
@@ -53,10 +72,16 @@ def main():
     print(f"  Host:      {args.host}")
     print(f"  Port:      {args.port}")
     print(f"  Reload:    {args.reload}")
+    if public_url:
+        print(f"  Tunnel:    {public_url}")
     print("=" * 60)
-    print(f"\n  API Docs:  http://localhost:{args.port}/docs")
-    print(f"  Web Map:   http://localhost:{args.port}/")
-    print(f"  WebSocket: ws://localhost:{args.port}/status/ws")
+    print(f"\n  Local:     http://localhost:{args.port}/docs")
+    if public_url:
+        print(f"  Public:    {public_url}/docs")
+        print(f"  Public WS: {public_url.replace('http', 'ws')}/status/ws")
+    else:
+        print(f"  Web Map:   http://localhost:{args.port}/")
+        print(f"  WebSocket: ws://localhost:{args.port}/status/ws")
     print("=" * 60 + "\n")
 
     uvicorn.run(

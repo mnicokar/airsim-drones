@@ -66,7 +66,102 @@ All commands are **non-blocking by default** — they return immediately while t
 
 ---
 
-## 3. Command Reference
+## 3. Action Name Reference
+
+You have one tool with 13 available actions. The `action` field determines which API operation to execute. Use this table to select the correct action and know which parameters to include.
+
+### Quick Lookup
+
+| Action Name | What It Does |
+|-------------|-------------|
+| `list_drones` | Discover which drones are available |
+| `list_houses` | Get all 20 house locations (A-T) with coordinates |
+| `get_drone_status` | Check a drone's position, state, heading, and current task |
+| `takeoff_drone` | Launch a drone into the air |
+| `land_drone` | Bring a drone down at its current position |
+| `navigate_drone_to_house` | Send a drone to a house (auto-takes-off) — **preferred for house targets** |
+| `move_drone_to_position` | Move a drone to arbitrary X,Y coordinates |
+| `change_drone_altitude` | Raise or lower a drone without moving it horizontally |
+| `rotate_drone` | Point a drone's camera in a compass direction |
+| `capture_drone_photo` | Take a photo from a drone's camera |
+| `fleet_formation_flight` | Fly all 5 drones in formation to a house |
+| `fleet_land_all` | Land every drone |
+| `emergency_stop` | Immediately halt all drones |
+
+### Detailed Action Descriptions
+
+#### `list_drones`
+Discover which drones exist in the simulation. Call this first if you don't know the fleet composition. Returns a list of drone IDs (e.g., ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]). No parameters needed.
+
+#### `list_houses`
+Get all 20 house locations (A through T) with their X,Y coordinates. Use this to find valid navigation targets and plan routes. No parameters needed.
+
+#### `get_drone_status`
+Check a specific drone's current position, velocity, heading, altitude, state, and task. **Always call this before issuing commands** to understand what the drone is doing. Returns state values: `idle`, `taking_off`, `flying`, `hovering`, `landing`, `landed`, `emergency`.
+- **Required:** `drone_id` (Drone1-Drone5)
+
+#### `takeoff_drone`
+Launch a drone and ascend to the specified altitude. Auto-initializes the drone if needed. **Use this before `move_drone_to_position` or `rotate_drone`**. Not needed before `navigate_drone_to_house` (which auto-takes-off).
+- **Required:** `drone_id` (Drone1-Drone5)
+- **Optional:** `altitude` (5-100m, default ~20m)
+
+#### `land_drone`
+Safely bring a drone down at its current position. Use after completing a task or mission.
+- **Required:** `drone_id` (Drone1-Drone5)
+
+#### `navigate_drone_to_house`
+Navigate a drone to view a specific house. The drone positions itself at a viewing distance facing the house, with the camera angled down. **Auto-takes-off if the drone is landed.** This is the preferred action for sending drones to houses — use this instead of `move_drone_to_position` whenever targeting a house.
+- **Required:** `drone_id` (Drone1-Drone5), `house` (A-T)
+- **Optional:** `speed` (1-20 m/s), `view_distance` (0-50m, default 10m)
+
+#### `move_drone_to_position`
+Move a drone to arbitrary X,Y coordinates. Use this for precise positioning not tied to a house. **The drone must be airborne first** — call `takeoff_drone` or `navigate_drone_to_house` first.
+- **Required:** `drone_id` (Drone1-Drone5), `x`, `y`
+- **Optional:** `altitude` (maintains current if omitted), `speed` (1-20 m/s)
+
+#### `change_drone_altitude`
+Change a drone's altitude while staying at its current X,Y position. Use for altitude surveys or adjusting inspection height.
+- **Required:** `drone_id` (Drone1-Drone5), `altitude` (1-100m)
+- **Optional:** `speed` (1-10 m/s)
+
+#### `rotate_drone`
+Rotate a drone to face a specific compass heading while hovering in place. Use this to aim the camera in a particular direction — for example, taking photos of a house from multiple angles.
+- **Required:** `drone_id` (Drone1-Drone5), `heading` (0-360, where 0=North, 90=East, 180=South, 270=West)
+
+#### `capture_drone_photo`
+Capture photos from a drone's camera. Returns file paths to saved images. **Position and aim the drone first** using `navigate_drone_to_house` or `rotate_drone`.
+- **Required:** `drone_id` (Drone1-Drone5)
+
+#### `fleet_formation_flight`
+Fly all 5 drones in formation to a house with a designated leader. All drones auto-initialize and auto-takeoff. Available formations: `v` (V-shape), `line` (side-by-side), `diamond`, `echelon` (diagonal), `column` (single file).
+- **Required:** `leader` (Drone1-Drone5), `house` (A-T)
+- **Optional:** `formation` (default "v"), `spacing` (3-20m, default 8m), `speed` (1-15 m/s, default 5)
+
+#### `fleet_land_all`
+Land every drone in the fleet at their current positions. Use to end a mission or bring all drones down. No parameters needed.
+
+#### `emergency_stop`
+Immediately stop all drones and command them to hover in place. **Use in any unsafe situation.** After calling this, normal operations are blocked until `POST /fleet/clear-emergency` is called (not available as an action — inform the user that emergency must be cleared manually).
+
+### Decision Guide: Choosing the Right Action
+
+| User Intent | Best Action | Why |
+|-------------|------------|-----|
+| "Go to House C" | `navigate_drone_to_house` | Auto-takeoff, auto-positions, faces the house |
+| "Move to coordinates 30, -20" | `move_drone_to_position` | Arbitrary positioning (needs takeoff first) |
+| "Take off" | `takeoff_drone` | Explicit launch |
+| "Land" / "Come down" | `land_drone` or `fleet_land_all` | Single drone vs. all drones |
+| "Take a photo" | `capture_drone_photo` | Position drone first |
+| "Fly in formation" | `fleet_formation_flight` | Coordinates all 5 drones |
+| "Stop!" / "Emergency" | `emergency_stop` | Halts everything immediately |
+| "Where is Drone 2?" | `get_drone_status` | Returns full status |
+| "What houses are there?" | `list_houses` | Returns all 20 with coordinates |
+| "Change height to 40m" | `change_drone_altitude` | Adjusts altitude in place |
+| "Face south" / "Turn to 180" | `rotate_drone` | Rotates camera direction |
+
+---
+
+## 4. Endpoint Reference
 
 ### Discovery & Status
 
@@ -108,7 +203,7 @@ All commands are **non-blocking by default** — they return immediately while t
 
 ---
 
-## 4. Scenario Playbooks
+## 5. Scenario Playbooks
 
 Each scenario provides exact API calls in order. Replace `BASE` with `http://localhost:8000`.
 
@@ -469,7 +564,7 @@ POST /fleet/land
 
 ---
 
-## 5. Best Practices
+## 6. Best Practices
 
 ### Before Every Mission
 - **Check fleet status first** — `GET /status/fleet` to see what state drones are in.
@@ -511,7 +606,7 @@ Check the `"detail"` field in error responses for a human-readable message.
 
 ---
 
-## 6. Houses Reference
+## 7. Houses Reference
 
 All 20 house locations in the Neighborhood map. Coordinates are in meters from the world origin.
 

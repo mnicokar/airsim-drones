@@ -4,8 +4,8 @@
 
 // Configuration
 const CONFIG = {
-    wsUrl: `ws://${window.location.host}/status/ws`,
-    apiUrl: `http://${window.location.host}`,
+    wsUrl: `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/status/ws`,
+    apiUrl: `${window.location.protocol}//${window.location.host}`,
     updateInterval: 1000,  // 1 second
     mapPadding: 20,
     droneSize: 12,
