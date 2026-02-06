@@ -272,7 +272,7 @@
   },
   {
     "name": "emergency_stop",
-    "description": "Immediately stop all drones and command them to hover in place. Use this in any unsafe situation or when you need to halt all movement instantly. After calling this, use /fleet/clear-emergency before resuming normal operations.",
+    "description": "Immediately stop all drones and command them to hover in place. Use this in any unsafe situation or when you need to halt all movement instantly. After calling this, use fleet_clear_emergency before resuming normal operations.",
     "parameters": {
       "type": "object",
       "properties": {},
@@ -280,5 +280,88 @@
     },
     "endpoint": "/fleet/emergency-stop",
     "method": "POST"
+  },
+  {
+    "name": "hover_drone",
+    "description": "Command a drone to stop all movement and hover in place at its current position. Use this to pause a drone mid-flight or to stabilize it before taking a photo.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "drone_id": {
+          "type": "string",
+          "description": "The drone to hover. Case-insensitive.",
+          "enum": ["Drone1", "Drone2", "Drone3", "Drone4", "Drone5"]
+        }
+      },
+      "required": ["drone_id"]
+    },
+    "endpoint": "/drones/{drone_id}/hover",
+    "method": "POST"
+  },
+  {
+    "name": "fleet_initialize",
+    "description": "Discover and initialize all available drones for API control. Call this before fleet commands if drones haven't been initialized yet. Most commands auto-initialize, so this is only needed if you want to explicitly set up the fleet first.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/fleet/initialize",
+    "method": "POST"
+  },
+  {
+    "name": "fleet_takeoff_all",
+    "description": "Command all drones in the fleet to take off. Auto-initializes drones if needed. Use this to get the entire fleet airborne at once.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/fleet/takeoff",
+    "method": "POST"
+  },
+  {
+    "name": "fleet_hover_all",
+    "description": "Command all drones to stop and hover in place at their current positions. Use this to pause the entire fleet.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/fleet/hover",
+    "method": "POST"
+  },
+  {
+    "name": "fleet_reset",
+    "description": "Return all drones to their starting positions and land. Acts as a full fleet reset — use this to start fresh or after completing a mission.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/fleet/reset",
+    "method": "POST"
+  },
+  {
+    "name": "fleet_clear_emergency",
+    "description": "Clear emergency status and allow normal operations to resume. Must be called after an emergency stop before drones can accept new commands.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/fleet/clear-emergency",
+    "method": "POST"
+  },
+  {
+    "name": "get_fleet_status",
+    "description": "Get current status of all drones including positions, states, tasks, and whether an emergency is active. Use this to monitor fleet progress and check drone states before issuing commands.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "endpoint": "/status/fleet",
+    "method": "GET"
   }
 ]

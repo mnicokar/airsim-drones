@@ -73,7 +73,7 @@ Every optional parameter has a sensible default. If the user doesn't specify a v
 
 ## 3. Action Name Reference
 
-You have 13 available actions. Use this table to select the correct action and know which parameters to include.
+You have 20 available actions. Use this table to select the correct action and know which parameters to include.
 
 ### Quick Lookup
 
@@ -82,16 +82,23 @@ You have 13 available actions. Use this table to select the correct action and k
 | `list_drones` | Discover which drones are available |
 | `list_houses` | Get all 20 house locations (A-T) with coordinates |
 | `get_drone_status` | Check a drone's position, state, heading, and current task |
+| `get_fleet_status` | Check status of all drones at once (positions, states, emergency) |
 | `takeoff_drone` | Launch a drone into the air |
 | `land_drone` | Bring a drone down at its current position |
+| `hover_drone` | Stop a drone and hover in place |
 | `navigate_drone_to_house` | Send a drone to a house (auto-takes-off) — **preferred for house targets** |
 | `move_drone_to_position` | Move a drone to arbitrary X,Y coordinates |
 | `change_drone_altitude` | Raise or lower a drone without moving it horizontally |
 | `rotate_drone` | Point a drone's camera in a compass direction |
 | `capture_drone_photo` | Take a photo from a drone's camera |
-| `fleet_formation_flight` | Fly all 5 drones in formation to a house |
+| `fleet_initialize` | Initialize all drones for API control |
+| `fleet_takeoff_all` | Take off all drones at once |
 | `fleet_land_all` | Land every drone |
+| `fleet_hover_all` | Hover all drones in place |
+| `fleet_reset` | Return all drones to starting positions and land |
+| `fleet_formation_flight` | Fly all 5 drones in formation to a house |
 | `emergency_stop` | Immediately halt all drones |
+| `fleet_clear_emergency` | Clear emergency status to resume operations |
 
 ### Detailed Action Descriptions
 
@@ -137,6 +144,28 @@ Rotate a drone to face a specific compass heading while hovering in place. Use t
 Capture photos from a drone's camera. Returns file paths to saved images. **Position and aim the drone first** using `navigate_drone_to_house` or `rotate_drone`.
 - **Required:** `drone_id` (Drone1-Drone5)
 
+#### `hover_drone`
+Command a drone to stop all movement and hover in place at its current position. Use this to pause a drone mid-flight or stabilize it before taking a photo.
+- **Required:** `drone_id` (Drone1-Drone5)
+
+#### `get_fleet_status`
+Get the current status of all drones at once, including positions, states, tasks, and whether an emergency is active. **Use this to monitor fleet progress** and check drone states before issuing commands. Returns `drones[]`, `total_count`, `flying_count`, and `emergency_active`. No parameters needed.
+
+#### `fleet_initialize`
+Discover and initialize all available drones for API control. Most commands auto-initialize, so this is only needed if you want to explicitly set up the fleet before issuing commands. No parameters needed.
+
+#### `fleet_takeoff_all`
+Command all drones to take off. Auto-initializes drones if needed. Use this to get the entire fleet airborne at once. No parameters needed.
+
+#### `fleet_hover_all`
+Command all drones to stop and hover in place at their current positions. Use this to pause the entire fleet. No parameters needed.
+
+#### `fleet_reset`
+Return all drones to their starting (home) positions and land them. Acts as a full fleet reset. Use this to start fresh or after completing a mission. No parameters needed.
+
+#### `fleet_clear_emergency`
+Clear emergency status and allow normal operations to resume. **Must be called after `emergency_stop`** before drones can accept new commands. No parameters needed.
+
 #### `fleet_formation_flight`
 Fly all 5 drones in formation to a house with a designated leader. All drones auto-initialize and auto-takeoff. Available formations: `v` (V-shape), `line` (side-by-side), `diamond`, `echelon` (diagonal), `column` (single file).
 - **Required:** `leader` (Drone1-Drone5), `house` (A-T)
@@ -146,7 +175,7 @@ Fly all 5 drones in formation to a house with a designated leader. All drones au
 Land every drone in the fleet at their current positions. Use to end a mission or bring all drones down. No parameters needed.
 
 #### `emergency_stop`
-Immediately stop all drones and command them to hover in place. **Use in any unsafe situation.** After calling this, normal operations are blocked until `POST /fleet/clear-emergency` is called (not available as an action — inform the user that emergency must be cleared manually).
+Immediately stop all drones and command them to hover in place. **Use in any unsafe situation.** After calling this, normal operations are blocked until `fleet_clear_emergency` is called.
 
 ### Decision Guide: Choosing the Right Action
 
@@ -155,14 +184,20 @@ Immediately stop all drones and command them to hover in place. **Use in any uns
 | "Go to House C" | `navigate_drone_to_house` | Auto-takeoff, auto-positions, faces the house |
 | "Move to coordinates 30, -20" | `move_drone_to_position` | Arbitrary positioning (needs takeoff first) |
 | "Take off" | `takeoff_drone` | Explicit launch |
+| "Take off all drones" | `fleet_takeoff_all` | Launches entire fleet at once |
 | "Land" / "Come down" | `land_drone` or `fleet_land_all` | Single drone vs. all drones |
+| "Hover" / "Stay there" | `hover_drone` or `fleet_hover_all` | Single drone vs. all drones |
 | "Take a photo" | `capture_drone_photo` | Position drone first |
 | "Fly in formation" | `fleet_formation_flight` | Coordinates all 5 drones |
 | "Stop!" / "Emergency" | `emergency_stop` | Halts everything immediately |
+| "Resume" / "Clear emergency" | `fleet_clear_emergency` | Unblocks commands after emergency stop |
+| "Reset" / "Go home" / "Start over" | `fleet_reset` | Returns all drones to start positions |
 | "Where is Drone 2?" | `get_drone_status` | Returns full status |
+| "Fleet status" / "What are the drones doing?" | `get_fleet_status` | Returns all drone states at once |
 | "What houses are there?" | `list_houses` | Returns all 20 with coordinates |
 | "Change height to 40m" | `change_drone_altitude` | Adjusts altitude in place |
 | "Face south" / "Turn to 180" | `rotate_drone` | Rotates camera direction |
+| "Initialize drones" | `fleet_initialize` | Explicit fleet setup (usually auto) |
 
 ---
 
@@ -177,6 +212,9 @@ These are the endpoints available to you. Replace `{drone_id}` with a valid dron
 | GET | `/drones` | List all available drone IDs |
 | GET | `/drones/houses` | List all 20 houses with coordinates |
 | GET | `/drones/{drone_id}` | Get drone status (position, heading, state, task) |
+| GET | `/status/fleet` | Get all drone statuses + flying count + emergency state |
+| GET | `/status/positions` | Get simplified position data for all drones |
+| GET | `/status/health` | Health check (API running, AirSim connected) |
 
 ### Individual Drone Commands (POST)
 
@@ -184,6 +222,7 @@ These are the endpoints available to you. Replace `{drone_id}` with a valid dron
 |--------|----------|------|-------------|
 | POST | `/drones/{drone_id}/takeoff` | `{"altitude": 20}` | Take off (altitude optional, default 20m) |
 | POST | `/drones/{drone_id}/land` | — | Land at current position |
+| POST | `/drones/{drone_id}/hover` | — | Stop and hover in place |
 | POST | `/drones/{drone_id}/goto-house` | `{"house": "A"}` | Navigate to house (auto-takeoff) |
 | POST | `/drones/{drone_id}/move` | `{"x": 20, "y": -15}` | Move to X,Y coordinates |
 | POST | `/drones/{drone_id}/altitude` | `{"altitude": 30}` | Change altitude only |
@@ -194,9 +233,14 @@ These are the endpoints available to you. Replace `{drone_id}` with a valid dron
 
 | Method | Endpoint | Body | Description |
 |--------|----------|------|-------------|
-| POST | `/fleet/group-flight` | `{"leader": "Drone1", "house": "A", "formation": "v"}` | Formation flight to house |
+| POST | `/fleet/initialize` | — | Initialize all drones for API control |
+| POST | `/fleet/takeoff` | — | Take off all drones |
 | POST | `/fleet/land` | — | Land all drones |
+| POST | `/fleet/hover` | — | Hover all drones in place |
+| POST | `/fleet/reset` | — | Return all drones to starting positions and land |
+| POST | `/fleet/group-flight` | `{"leader": "Drone1", "house": "A", "formation": "v"}` | Formation flight to house |
 | POST | `/fleet/emergency-stop` | — | Emergency stop all drones immediately |
+| POST | `/fleet/clear-emergency` | — | Clear emergency status to resume operations |
 
 ---
 
@@ -557,6 +601,24 @@ POST /drones/drone5/goto-house  Body: {"house": "T"}
 Step 8 — Final photos and land
 (Capture photos for round 4, then:)
 POST /fleet/land
+```
+
+---
+
+### Scenario 13: Fleet Reset
+
+**Goal:** Return all drones to their starting positions and land — a clean slate.
+
+```
+Step 1 — Reset fleet
+POST /fleet/reset
+Expected: {"status": "reset", "drones": ["Drone1", "Drone2", ...], "count": 5}
+
+All drones fly back to their home positions and land automatically.
+
+Step 2 — Verify reset complete
+GET /status/fleet
+Expected: all drones state = "landed", flying_count = 0
 ```
 
 ---

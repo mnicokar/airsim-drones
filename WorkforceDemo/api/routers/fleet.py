@@ -39,8 +39,7 @@ def get_services():
 @router.post(
     "/initialize",
     summary="Initialize all drones",
-    description="Discover and initialize all available drones for API control.",
-    include_in_schema=False,
+    description="Discover and initialize all available drones for API control. Call this before fleet commands if drones haven't been initialized yet.",
 )
 async def initialize_fleet():
     """Initialize all drones in the fleet."""
@@ -60,8 +59,7 @@ async def initialize_fleet():
 @router.post(
     "/takeoff",
     summary="Take off all drones",
-    description="Command all drones to take off.",
-    include_in_schema=False,
+    description="Command all drones to take off. Auto-initializes drones if needed.",
 )
 async def takeoff_fleet():
     """Take off all drones."""
@@ -102,7 +100,6 @@ async def land_fleet():
     "/hover",
     summary="Hover all drones",
     description="Command all drones to stop and hover in place.",
-    include_in_schema=False,
 )
 async def hover_fleet():
     """Hover all drones."""
@@ -110,6 +107,22 @@ async def hover_fleet():
     result = drone_service.hover_all()
     return {
         "status": "hovering",
+        "drones": result,
+        "count": len(result)
+    }
+
+
+@router.post(
+    "/reset",
+    summary="Reset all drones to start",
+    description="Return all drones to their starting positions and land. Acts as a full fleet reset."
+)
+async def reset_fleet():
+    """Return all drones to their starting positions and land."""
+    drone_service, _ = get_services()
+    result = drone_service.reset_all()
+    return {
+        "status": "reset",
         "drones": result,
         "count": len(result)
     }
@@ -194,8 +207,7 @@ async def emergency_stop():
     "/clear-emergency",
     response_model=EmergencyResponse,
     summary="Clear emergency status",
-    description="Clear emergency status and allow normal operations to resume.",
-    include_in_schema=False,
+    description="Clear emergency status and allow normal operations to resume. Must be called after an emergency stop before drones can accept new commands.",
 )
 async def clear_emergency():
     """Clear emergency status."""

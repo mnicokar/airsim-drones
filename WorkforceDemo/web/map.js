@@ -217,15 +217,42 @@ function updateFleetList() {
         return;
     }
 
-    container.innerHTML = drones.map(d => {
-        const isSelected = d.drone_id === selectedDrone ? 'selected' : '';
-        return `
-            <div class="drone-item ${isSelected}" onclick="selectDrone('${d.drone_id}')">
-                <span class="drone-id">${d.drone_id}</span>
-                <span class="drone-state ${d.state}">${d.state}</span>
-            </div>
-        `;
-    }).join('');
+    // Update existing elements in-place to avoid destroying hover/click state
+    const existing = container.querySelectorAll('.drone-item');
+    const existingIds = Array.from(existing).map(el => el.dataset.droneId);
+    const newIds = drones.map(d => d.drone_id);
+
+    // Only do a full rebuild if the drone list changed
+    const listChanged = existingIds.length !== newIds.length ||
+        existingIds.some((id, i) => id !== newIds[i]);
+
+    if (listChanged) {
+        container.innerHTML = drones.map(d => {
+            const isSelected = d.drone_id === selectedDrone ? 'selected' : '';
+            return `
+                <div class="drone-item ${isSelected}" data-drone-id="${d.drone_id}" onclick="selectDrone('${d.drone_id}')">
+                    <span class="drone-id">${d.drone_id}</span>
+                    <span class="drone-state ${d.state}">${d.state}</span>
+                </div>
+            `;
+        }).join('');
+    } else {
+        // Update in-place — no DOM destruction
+        existing.forEach((el, i) => {
+            const d = drones[i];
+            const stateEl = el.querySelector('.drone-state');
+            if (stateEl.textContent !== d.state) {
+                stateEl.textContent = d.state;
+                stateEl.className = `drone-state ${d.state}`;
+            }
+            const shouldBeSelected = d.drone_id === selectedDrone;
+            if (shouldBeSelected && !el.classList.contains('selected')) {
+                el.classList.add('selected');
+            } else if (!shouldBeSelected && el.classList.contains('selected')) {
+                el.classList.remove('selected');
+            }
+        });
+    }
 }
 
 function updateDroneCount() {
@@ -393,7 +420,7 @@ function fetchCameraFrame() {
 
 // Selection and interaction
 function selectDrone(droneId) {
-    // If clicking the same drone, deselect it
+    // If clicking the same drone, toggle detail panel only
     if (selectedDrone === droneId) {
         closeDetail();
         return;
@@ -414,8 +441,8 @@ function selectDrone(droneId) {
 function closeDetail() {
     selectedDrone = null;
     document.getElementById('drone-detail').classList.add('hidden');
-    stopCameraFeed();
-    updateFleetList();  // Update to remove selection highlight
+    // Camera stays open independently
+    updateFleetList();
     render();
 }
 

@@ -783,6 +783,35 @@ class DroneService:
 
         return drone_ids
 
+    def reset_all(self) -> List[str]:
+        """
+        Reset all drones to their original starting positions using AirSim's
+        native reset. This returns drones to the positions defined in
+        AirSim settings.json.
+
+        Returns:
+            List of drones that were reset
+        """
+        drone_ids = self.get_available_drones()
+
+        # Use AirSim's native reset to return all vehicles to spawn positions
+        self.client.reset()
+
+        # Clear internal state
+        self._drone_states.clear()
+        self._drone_tasks.clear()
+        self._home_positions.clear()
+
+        time.sleep(2)  # Give AirSim a moment to finish resetting
+
+        # Re-initialize all drones (re-enables API control, re-arms, captures true home positions)
+        initialized = []
+        for drone_id in drone_ids:
+            if self.initialize_drone(drone_id):
+                initialized.append(drone_id)
+
+        return initialized
+
     def hover_all(self, drone_ids: Optional[List[str]] = None) -> List[str]:
         """
         Command all drones to hover in place.

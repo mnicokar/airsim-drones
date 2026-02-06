@@ -176,7 +176,6 @@ async def land_drone(
     "/{drone_id}/hover",
     summary="Hover in place",
     description="Command the drone to stop and hover at its current position. Auto-initializes the drone if needed.",
-    include_in_schema=False,
 )
 async def hover_drone(
     drone_id: str = Path(..., description="Drone ID (e.g., 'Drone1' or 'drone1')")

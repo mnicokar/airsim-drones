@@ -26,16 +26,20 @@
             <aside class="sidebar">
                 <section class="panel" id="fleet-panel">
                     <h2>Fleet Status</h2>
+                    <p class="hint-text">Click a drone to see its camera view</p>
                     <div id="fleet-list"></div>
 
                     <div id="drone-camera-section" class="hidden">
                         <div class="camera-header">
                             <span id="camera-drone-label">Camera: --</span>
-                            <select id="camera-type">
-                                <option value="scene">RGB</option>
-                                <option value="depth">Depth</option>
-                                <option value="segmentation">Segmentation</option>
-                            </select>
+                            <div class="camera-controls">
+                                <select id="camera-type">
+                                    <option value="scene">RGB</option>
+                                    <option value="depth">Depth</option>
+                                    <option value="segmentation">Segmentation</option>
+                                </select>
+                                <button class="camera-close-btn" onclick="stopCameraFeed()">&times;</button>
+                            </div>
                         </div>
                         <div class="camera-feed">
                             <img id="camera-image" src="" alt="Drone camera">
