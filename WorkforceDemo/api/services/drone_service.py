@@ -7,6 +7,7 @@ directly from Python or through the REST API.
 
 import airsim
 import json
+import logging
 import math
 import time
 import os
@@ -17,6 +18,8 @@ from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 
 class DroneState(Enum):
@@ -78,6 +81,58 @@ class DroneService:
         self._home_positions: Dict[str, Tuple[float, float, float]] = {}
         self._available_drones: List[str] = []
         self._connected = False
+        self._yolo_model = None
+
+    def _get_yolo_model(self):
+        """Lazy-load the YOLO model on first use."""
+        if self._yolo_model is None:
+            try:
+                from ultralytics import YOLO
+                self._yolo_model = YOLO("yolov8n.pt")
+                logger.info("YOLO model loaded successfully")
+            except Exception as e:
+                logger.warning(f"Failed to load YOLO model: {e}")
+                return None
+        return self._yolo_model
+
+    def _run_yolo_detection(self, img: np.ndarray) -> np.ndarray:
+        """Run YOLO object detection and draw bounding boxes on the image."""
+        model = self._get_yolo_model()
+        if model is None:
+            return img
+
+        try:
+            results = model.predict(img, conf=0.25, verbose=False)
+            for result in results:
+                boxes = result.boxes
+                for box in boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    conf = float(box.conf[0])
+                    cls_id = int(box.cls[0])
+                    class_name = model.names[cls_id]
+
+                    # Color based on class id
+                    colors = [
+                        (0, 255, 0), (255, 0, 0), (0, 0, 255),
+                        (255, 255, 0), (0, 255, 255), (255, 0, 255),
+                    ]
+                    color = colors[cls_id % len(colors)]
+
+                    # Draw bounding box
+                    cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+
+                    # Draw label with background
+                    label = f"{class_name} {conf:.0%}"
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    font_scale = 0.5
+                    thickness = 1
+                    (tw, th), _ = cv2.getTextSize(label, font, font_scale, thickness)
+                    cv2.rectangle(img, (x1, y1 - th - 6), (x1 + tw + 4, y1), color, -1)
+                    cv2.putText(img, label, (x1 + 2, y1 - 4), font, font_scale, (255, 255, 255), thickness)
+        except Exception as e:
+            logger.warning(f"YOLO detection failed: {e}")
+
+        return img
 
     @property
     def client(self) -> airsim.MultirotorClient:
@@ -707,6 +762,10 @@ class DroneService:
             scale = max_width / img.shape[1]
             new_height = int(img.shape[0] * scale)
             img = cv2.resize(img, (max_width, new_height), interpolation=cv2.INTER_AREA)
+
+        # Run YOLO object detection on scene images
+        if image_type == "scene":
+            img = self._run_yolo_detection(img)
 
         return img
 
