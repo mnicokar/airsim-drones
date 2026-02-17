@@ -45,6 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('click', handleClick);
 
+    // Log configuration so we can verify API base URLs
+    console.log('[UI] CONFIG:', {
+        wsUrl: CONFIG.wsUrl,
+        apiUrl: CONFIG.apiUrl,
+        updateInterval: CONFIG.updateInterval,
+    });
+
     // Load initial data
     loadHouses();
 
@@ -366,6 +373,7 @@ function startCameraFeed(droneId) {
     cameraLabel.textContent = `Camera: ${droneId}`;
 
     // Fetch immediately
+    console.log('[UI] Starting camera feed for', droneId);
     fetchCameraFrame();
 
     // Then fetch every 100ms (10 fps target)
@@ -404,15 +412,24 @@ function fetchCameraFrame() {
     // Add timestamp to prevent caching
     const timestamp = Date.now();
     const url = `${CONFIG.apiUrl}/drones/${cameraDroneId}/camera/frame?type=${imageType}&t=${timestamp}`;
+    console.log('[UI] Fetching camera frame', {
+        droneId: cameraDroneId,
+        imageType,
+        url,
+    });
 
     // Create a new image to load
     const newImg = new Image();
     newImg.onload = () => {
         img.src = newImg.src;
         cameraLoading = false;
+        console.log('[UI] Camera frame loaded into <img>', {
+            naturalWidth: newImg.naturalWidth,
+            naturalHeight: newImg.naturalHeight,
+        });
     };
     newImg.onerror = (e) => {
-        console.error('Failed to load camera frame from:', url, e);
+        console.error('[UI] Failed to load camera frame', { url, error: e });
         cameraLoading = false;
     };
     newImg.src = url;
