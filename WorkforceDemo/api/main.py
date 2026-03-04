@@ -21,7 +21,7 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 
 from .config import settings
-from .routers import drones_router, fleet_router, status_router
+from .routers import drones_router, fleet_router, status_router, sam3_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -75,6 +75,7 @@ app.add_middleware(
 app.include_router(drones_router)
 app.include_router(fleet_router)
 app.include_router(status_router)
+app.include_router(sam3_router)
 
 # Serve static web files
 web_path = Path(__file__).parent.parent / "web"
@@ -107,6 +108,24 @@ async def get_js():
     return FileResponse(str(web_path / "map.js"), media_type="application/javascript")
 
 
+@app.get("/sam3", include_in_schema=False)
+async def sam3_page():
+    """Serve SAM3 test page."""
+    return FileResponse(str(web_path / "sam3.html"))
+
+
+@app.get("/sam3.js", include_in_schema=False)
+async def sam3_js():
+    """Serve SAM3 JavaScript."""
+    return FileResponse(str(web_path / "sam3.js"), media_type="application/javascript")
+
+
+@app.get("/sam3.css", include_in_schema=False)
+async def sam3_css():
+    """Serve SAM3 CSS."""
+    return FileResponse(str(web_path / "sam3.css"), media_type="text/css")
+
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup."""
@@ -116,6 +135,7 @@ async def startup_event():
     print(f"  API Docs:     http://localhost:{settings.port}/docs")
     print(f"  Web Map:      http://localhost:{settings.port}/")
     print(f"  WebSocket:    ws://localhost:{settings.port}/status/ws")
+    print(f"  SAM3 Test:    http://localhost:{settings.port}/sam3")
     print(f"{'='*60}\n")
 
 

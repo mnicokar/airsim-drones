@@ -47,13 +47,13 @@ isProject: false
 ### 2. Verify YOLO model loading and dependencies
 
 - **Confirm `ultralytics` is installed in the same environment as the API** (per `[WorkforceDemo/requirements.txt](WorkforceDemo/requirements.txt)`).
-- **Add or review logging inside `_get_yolo_model()**` in `drone_service.py`:
+- **Add or review logging inside `_get_yolo_model()`** in `drone_service.py`:
   - Ensure a clear log line on success (e.g., "YOLO model loaded successfully") and on failure (warning with stack trace).
   - Check API terminal logs while hitting `/drones/{id}/camera/frame` to see whether the model actually loads or if it's failing and returning the original image.
 
 ### 3. Validate YOLO inference is executing on frames
 
-- **Strengthen logging in `_run_yolo_detection()**`:
+- **Strengthen logging in `_run_yolo_detection()`**:
   - Log when detection starts and ends for each frame (but without spamming excessively).
   - Log how many detections are found per frame and a few sample class names and confidences.
 - **Temporarily simplify detection for debugging**:

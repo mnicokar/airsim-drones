@@ -12,6 +12,7 @@ from .drone_service import DroneService, DroneStatus, DroneState, get_drone_serv
 from .fleet_service import FleetService, FormationType, SearchPattern, get_fleet_service
 from .safety_service import SafetyService, Geofence, NoFlyZone, get_safety_service
 from .mission_service import MissionService, Mission, MissionStatus, MissionType, Waypoint, get_mission_service
+from .sam3_service import Sam3Service, get_sam3_service
 
 __all__ = [
     # Drone service
@@ -36,4 +37,7 @@ __all__ = [
     "MissionType",
     "Waypoint",
     "get_mission_service",
+    # SAM3 service
+    "Sam3Service",
+    "get_sam3_service",
 ]

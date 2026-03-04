@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAM3 Segmentation Test</title>
+    <link rel="stylesheet" href="/sam3.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SAM3 Segmentation Test</h1>
+            <div class="status-bar">
+                <span id="model-status" class="status disconnected">Model: checking...</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- Source Panel -->
+            <div class="panel source-panel">
+                <h2>Source</h2>
+
+                <div class="input-group">
+                    <label>Image Source</label>
+                    <div class="source-tabs">
+                        <button class="tab active" data-tab="upload" onclick="switchTab('upload')">Upload File</button>
+                        <button class="tab" data-tab="drone" onclick="switchTab('drone')">Drone Camera</button>
+                    </div>
+                </div>
+
+                <div id="tab-upload" class="tab-content active">
+                    <div class="input-group">
+                        <label for="file-input">Select Image</label>
+                        <input type="file" id="file-input" accept="image/*" onchange="handleFileUpload(event)">
+                    </div>
+                </div>
+
+                <div id="tab-drone" class="tab-content">
+                    <div class="input-group">
+                        <label for="drone-select">Drone</label>
+                        <select id="drone-select">
+                            <option value="">Loading drones...</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="grabDroneFrame()">Grab Frame</button>
+                </div>
+
+                <div class="input-group">
+                    <label for="prompt-input">Text Prompt</label>
+                    <input type="text" id="prompt-input" placeholder='e.g. "a car", "building", "person"'>
+                </div>
+
+                <button class="btn btn-primary" id="run-btn" onclick="runSegmentation()">Run SAM3</button>
+
+                <div class="preview-section">
+                    <h3>Source Preview</h3>
+                    <img id="source-preview" src="" alt="No image selected" style="display:none;">
+                    <p id="no-source" class="placeholder-text">No image selected</p>
+                </div>
+            </div>
+
+            <!-- Result Panel -->
+            <div class="panel result-panel">
+                <h2>Result</h2>
+
+                <div id="loading-spinner" class="spinner" style="display:none;">
+                    <div class="spinner-ring"></div>
+                    <p>Running SAM3 inference...</p>
+                </div>
+
+                <div id="result-content" style="display:none;">
+                    <img id="result-image" src="" alt="Segmentation result">
+
+                    <div class="detections-section">
+                        <h3>Detections</h3>
+                        <p id="detection-summary"></p>
+                        <table id="detections-table">
+                            <thead>
+                                <tr>
+                                    <th>Mask</th>
+                                    <th>Score</th>
+                                    <th>Area (px)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detections-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <p id="no-result" class="placeholder-text">Run segmentation to see results</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="/sam3.js"></script>
+</body>
+</html>

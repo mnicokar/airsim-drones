@@ -767,7 +767,7 @@ class DroneService:
 
         return results
 
-    def get_camera_frame(self, drone_id: str, image_type: str = "scene", max_width: int = 640) -> Optional[np.ndarray]:
+    def get_camera_frame(self, drone_id: str, image_type: str = "scene", max_width: int = 640, run_detection: bool = True) -> Optional[np.ndarray]:
         """
         Get a single camera frame from drone.
 
@@ -823,11 +823,11 @@ class DroneService:
             print(f"[CAM] Resized image to shape={img.shape} (max_width={max_width})")
 
         # Run YOLO object detection on scene images
-        if image_type == "scene":
+        if image_type == "scene" and run_detection:
             print("[CAM] Passing scene image to YOLO for detection")
             img = self._run_yolo_detection(img)
         else:
-            print("[CAM] Skipping YOLO because image_type is not 'scene'")
+            print("[CAM] Skipping YOLO because image_type is not 'scene' or run_detection=False")
 
         print(f"[CAM] Returning image from get_camera_frame with shape={img.shape}")
         return img

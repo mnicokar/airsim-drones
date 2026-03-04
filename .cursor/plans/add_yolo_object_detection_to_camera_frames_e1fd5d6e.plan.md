@@ -35,7 +35,7 @@ Add YOLO object detection to the `get_camera_frame` method in `drone_service.py`
 
 ### 2. Modify DroneService Class
 
-**File: `WorkforceDemo/api/services/drone_service.py**`
+**File: `WorkforceDemo/api/services/drone_service.py`**
 
 - **Add imports** (after line 15):
   - Import `YOLO` from `ultralytics`
@@ -93,9 +93,9 @@ Add YOLO object detection to the `get_camera_frame` method in `drone_service.py`
 
 ## Files to Modify
 
-1. `**WorkforceDemo/requirements.txt**`
+1. `**WorkforceDemo/requirements.txt`**
   - Add `ultralytics>=8.0.0`
-2. `**WorkforceDemo/api/services/drone_service.py**`
+2. `**WorkforceDemo/api/services/drone_service.py`**
   - Add YOLO import
   - Add model initialization logic
   - Modify `get_camera_frame` to apply detection before return

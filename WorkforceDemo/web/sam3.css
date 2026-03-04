@@ -1,0 +1,289 @@
+/* SAM3 Test Page Styles - Dark theme matching existing UI */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Header */
+header {
+    background: #16213e;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #0f3460;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    color: #00d9ff;
+}
+
+.status-bar {
+    display: flex;
+    gap: 2rem;
+    font-size: 0.9rem;
+}
+
+.status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.status.connected {
+    background: #00c853;
+    color: #000;
+}
+
+.status.disconnected {
+    background: #ff5252;
+    color: #fff;
+}
+
+/* Main layout */
+main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.panel {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.panel h2 {
+    color: #00d9ff;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #0f3460;
+    padding-bottom: 0.5rem;
+}
+
+.source-panel {
+    border-right: 1px solid #0f3460;
+    max-width: 420px;
+}
+
+/* Input groups */
+.input-group {
+    margin-bottom: 1rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+input[type="text"],
+input[type="file"],
+select {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    background: #0f3460;
+    border: 1px solid #1a4a8a;
+    border-radius: 6px;
+    color: #eee;
+    font-size: 0.95rem;
+}
+
+input[type="text"]:focus,
+select:focus {
+    outline: none;
+    border-color: #00d9ff;
+}
+
+input[type="file"] {
+    padding: 0.4rem;
+}
+
+input[type="file"]::file-selector-button {
+    background: #0f3460;
+    border: 1px solid #1a4a8a;
+    color: #00d9ff;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 0.5rem;
+}
+
+/* Tabs */
+.source-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tab {
+    flex: 1;
+    padding: 0.5rem;
+    background: #0f3460;
+    border: 1px solid #1a4a8a;
+    color: #aaa;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.tab.active {
+    background: #1a4a8a;
+    color: #00d9ff;
+    border-color: #00d9ff;
+}
+
+.tab-content {
+    display: none;
+    margin-bottom: 1rem;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: #00d9ff;
+    color: #1a1a2e;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #00b8d9;
+}
+
+.btn-secondary {
+    background: #0f3460;
+    color: #00d9ff;
+    border: 1px solid #1a4a8a;
+    margin-bottom: 1rem;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #1a4a8a;
+}
+
+/* Preview */
+.preview-section {
+    margin-top: 1rem;
+}
+
+.preview-section h3 {
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-bottom: 0.5rem;
+}
+
+#source-preview,
+#result-image {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #0f3460;
+}
+
+.placeholder-text {
+    color: #666;
+    text-align: center;
+    padding: 3rem 1rem;
+    font-style: italic;
+}
+
+/* Spinner */
+.spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 1rem;
+}
+
+.spinner-ring {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #0f3460;
+    border-top-color: #00d9ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.spinner p {
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+/* Detections table */
+.detections-section {
+    margin-top: 1.5rem;
+}
+
+.detections-section h3 {
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-bottom: 0.5rem;
+}
+
+#detection-summary {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #00d9ff;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #0f3460;
+    font-size: 0.85rem;
+}
+
+th {
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+}
