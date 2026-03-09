@@ -7,6 +7,7 @@ directly from Python or through the REST API.
 
 import airsim
 import json
+import logging
 import math
 import time
 import os
@@ -17,6 +18,8 @@ from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 
 class DroneState(Enum):
@@ -78,6 +81,109 @@ class DroneService:
         self._home_positions: Dict[str, Tuple[float, float, float]] = {}
         self._available_drones: List[str] = []
         self._connected = False
+        self._yolo_model = None
+
+    def _get_yolo_model(self):
+        """Lazy-load the YOLO model on first use."""
+        if self._yolo_model is None:
+            try:
+                print("[YOLO] No cached model, attempting to load 'yolov8n.pt'...")
+                from ultralytics import YOLO
+                self._yolo_model = YOLO("yolov8n.pt")
+                class_names = list(self._yolo_model.names.values())
+                logger.info("YOLO model loaded successfully")
+                print(f"[YOLO] Model loaded successfully. Number of classes={len(class_names)}")
+                print(f"[YOLO] First 10 classes: {class_names[:10]}")
+            except Exception as e:
+                logger.warning(f"Failed to load YOLO model: {e}")
+                print(f"[YOLO] Failed to load YOLO model: {e}")
+                return None
+        else:
+            # Helpful when debugging repeated calls
+            print("[YOLO] Reusing cached YOLO model")
+        return self._yolo_model
+
+    def _run_yolo_detection(self, img: np.ndarray) -> np.ndarray:
+        """Run YOLO object detection and draw bounding boxes on the image."""
+        model = self._get_yolo_model()
+        if model is None:
+            print("[YOLO] Skipping detection because model is not available")
+            return img
+
+        try:
+            print(f"[YOLO] Running detection on frame, shape={img.shape}")
+            # Lower confidence threshold for debugging so we can see if anything is detected
+            results = model.predict(img, conf=0.10, verbose=False)
+            print(f"[YOLO] Received {len(results)} result object(s) from model")
+
+            total_boxes = 0
+            for idx, result in enumerate(results):
+                boxes = result.boxes
+                num_boxes = len(boxes)
+                total_boxes += num_boxes
+                print(f"[YOLO] Result #{idx}: {num_boxes} box(es)")
+
+                for box_idx, box in enumerate(boxes):
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    conf = float(box.conf[0])
+                    cls_id = int(box.cls[0])
+                    class_name = model.names.get(cls_id, f"class_{cls_id}")
+
+                    print(
+                        f"[YOLO] Box #{box_idx}: cls={class_name} (id={cls_id}), "
+                        f"conf={conf:.2f}, box=({x1},{y1},{x2},{y2})"
+                    )
+
+                    # Color based on class id (thicker lines for easier visibility)
+                    colors = [
+                        (0, 255, 0), (255, 0, 0), (0, 0, 255),
+                        (255, 255, 0), (0, 255, 255), (255, 0, 255),
+                    ]
+                    color = colors[cls_id % len(colors)]
+
+                    # Draw bounding box
+                    cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
+
+                    # Draw label with background
+                    label = f"{class_name} {conf:.0%}"
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    font_scale = 0.6
+                    thickness = 2
+                    (tw, th), _ = cv2.getTextSize(label, font, font_scale, thickness)
+                    cv2.rectangle(img, (x1, max(0, y1 - th - 6)), (x1 + tw + 4, y1), color, -1)
+                    cv2.putText(
+                        img,
+                        label,
+                        (x1 + 2, max(0, y1 - 4)),
+                        font,
+                        font_scale,
+                        (255, 255, 255),
+                        thickness,
+                    )
+
+            print(f"[YOLO] Total boxes drawn on frame: {total_boxes}")
+
+            # Save a debug frame to disk so we can inspect YOLO output visually.
+            try:
+                import os
+                from datetime import datetime
+
+                debug_dir = "debug_yolo_frames"
+                os.makedirs(debug_dir, exist_ok=True)
+                timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
+                debug_path = os.path.join(debug_dir, f"frame_{timestamp}.jpg")
+                success = cv2.imwrite(debug_path, img)
+                if success:
+                    print(f"[YOLO] Saved debug frame with drawn boxes to: {debug_path}")
+                else:
+                    print(f"[YOLO] Failed to save debug frame to: {debug_path}")
+            except Exception as save_err:
+                print(f"[YOLO] Error while saving debug frame: {save_err}")
+        except Exception as e:
+            logger.warning(f"YOLO detection failed: {e}")
+            print(f"[YOLO] Detection error: {e}")
+
+        return img
 
     @property
     def client(self) -> airsim.MultirotorClient:
@@ -673,6 +779,8 @@ class DroneService:
         Returns:
             Image as numpy array, or None if failed
         """
+        print(f"[CAM] get_camera_frame called for drone_id={drone_id}, image_type={image_type}")
+
         type_map = {
             "scene": airsim.ImageType.Scene,
             "depth": airsim.ImageType.DepthPerspective,
@@ -680,14 +788,17 @@ class DroneService:
         }
 
         if image_type not in type_map:
+            print(f"[CAM] Invalid image_type received: {image_type}")
             return None
 
         is_float = (image_type == "depth")
+        print(f"[CAM] Requesting image from AirSim: camera='0', type={type_map[image_type]}, is_float={is_float}")
         responses = self.client.simGetImages([
             airsim.ImageRequest("0", type_map[image_type], is_float, False)
         ], vehicle_name=drone_id)
 
         if not responses or len(responses) == 0:
+            print("[CAM] simGetImages returned no responses")
             return None
 
         response = responses[0]
@@ -702,12 +813,23 @@ class DroneService:
             img = img1d.reshape(response.height, response.width, 3)
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
+        print(f"[CAM] Received raw image from AirSim with shape={img.shape}")
+
         # Resize for faster transfer if image is larger than max_width
         if img.shape[1] > max_width:
             scale = max_width / img.shape[1]
             new_height = int(img.shape[0] * scale)
             img = cv2.resize(img, (max_width, new_height), interpolation=cv2.INTER_AREA)
+            print(f"[CAM] Resized image to shape={img.shape} (max_width={max_width})")
 
+        # Run YOLO object detection on scene images
+        if image_type == "scene":
+            print("[CAM] Passing scene image to YOLO for detection")
+            img = self._run_yolo_detection(img)
+        else:
+            print("[CAM] Skipping YOLO because image_type is not 'scene'")
+
+        print(f"[CAM] Returning image from get_camera_frame with shape={img.shape}")
         return img
 
     # =========================================================================

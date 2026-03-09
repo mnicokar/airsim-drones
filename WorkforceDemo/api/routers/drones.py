@@ -354,6 +354,7 @@ async def get_camera_frame(
     type: str = Query("scene", description="Image type: scene (RGB), depth, or segmentation")
 ):
     """Get a single camera frame from the drone."""
+    print(f"[API] GET /drones/{drone_id}/camera/frame?type={type}")
     service = get_service()
 
     # Validate image type
@@ -365,7 +366,9 @@ async def get_camera_frame(
         )
 
     try:
+        print("[API] Requesting frame from DroneService.get_camera_frame")
         frame = service.get_camera_frame(drone_id, type)
+        print(f"[API] Frame received from service is None? {frame is None}")
         if frame is None:
             raise HTTPException(
                 status_code=500,
@@ -373,6 +376,7 @@ async def get_camera_frame(
             )
 
         # Encode frame as JPEG (high quality, good balance of quality/speed)
+        print("[API] Encoding frame as JPEG")
         success, jpeg_data = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
         if not success:
             raise HTTPException(
@@ -380,8 +384,11 @@ async def get_camera_frame(
                 detail="Failed to encode image as JPEG"
             )
 
+        jpeg_bytes = jpeg_data.tobytes()
+        print(f"[API] JPEG encoding successful, size={len(jpeg_bytes)} bytes")
+
         return Response(
-            content=jpeg_data.tobytes(),
+            content=jpeg_bytes,
             media_type="image/jpeg",
             headers={
                 "Cache-Control": "no-cache, no-store, must-revalidate",
